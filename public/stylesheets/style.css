@@ -1,0 +1,24 @@
+.map {
+  position:absolute; 
+  width:47%; 
+  height:80%; 
+  background:grey;
+}
+
+.panel {
+  position:absolute; 
+  width:47%; 
+  left:51%; 
+  height:80%; 
+  background:inherit; 
+  overflow-x: auto;
+}
+
+.zip {
+  width: 10em;
+  display: inline-block;
+}
+
+.zip label:hover {
+  color: blue;
+}
