@@ -1,153 +1,24 @@
-/**
- * Calculates and displays the address details of  425 Randolph St, Chicago, IL
- * based on a structured input
- *
- * @param   {H.service.Platform} platform    A stub class to access HERE services
- */
-function geocode(platform) {
-    var geocoder = platform.getGeocodingService(),
-        geocodingParameters = {
-        postalcode: '98006',
-        country: 'usa',
+function geocode2(platform, where) {
+    var geocoder = platform.getGeocodingService();
+    var geocodingParameters = {
         jsonattributes : 1
     };
-    
+
+    $.each(where, function(key, value) {
+            geocodingParameters[key] = value;
+        });
     geocoder.geocode(geocodingParameters,
-                     onSuccess,
-                     onError
+                     onGeocodeSuccess,
+                     onGeocodeError
                      );
 }
 
-/**
- * This function will be called once the Geocoder REST API provides a response
- *
- * @param  {Object} result          A JSONP object representing the  location(s) found.
- *
- * see: http://developer.here.com/rest-apis/documentation/geocoder/topics/resource-type-response-geocode.html
- */
-function onSuccess(result) {
-
-    if (result.type === 'PermissionError') {
-        console.log(result);
-        locationsContainer.innerHTML = 'Error calling service: ' + result.details;
-    } else {
-        console.log(result);
-        var locations = result.response.view[0].result;
-        /*
-         * The styling of the geocoding response on the map is entirely under the developer's control.
-         * A representitive styling can be found the full JS + HTML code of this example
-         * in the functions below:
-         */
-        addLocationsToMap(locations);
-        addLocationsToPanel(locations);
-        // ... etc.
-    }
+function onGeocodeSuccess(result) {
+    console.log(result);
 }
 
-/**
- * This function will be called if a communication error occurs during the JSON-P request
- *
- * @param  {Object} error  The error message received.
- */
-function onError(error) {
-    alert('Ooops!');
-}
-
-/**
- * Opens/Closes a infobubble
- * @param  {H.geo.Point} position     The location on the map.
- * @param  {String} text              The contents of the infobubble.
- */
-function openBubble(position, text){
-    if(!bubble){
-        bubble =  new H.ui.InfoBubble(
-                                      position,
-                                      {content: text});
-        ui.addBubble(bubble);
-    } else {
-        bubble.setPosition(position);
-        bubble.setContent(text);
-        bubble.open();
-    }
-}
-
-/**
- * Creates a series of list items for each location found, and adds it to the panel.
- *
- * @param {Object[]} locations An array of locations as received from the
- *                             H.service.GeocodingService
- */
-function addLocationsToPanel(locations) {
-
-    var nodeOL = document.createElement('ul'),
-        i;
-
-    nodeOL.style.fontSize = 'small';
-    nodeOL.style.marginLeft ='5%';
-    nodeOL.style.marginRight ='5%';
-    
-    
-    for (i = 0;  i < locations.length; i += 1) {
-        var li = document.createElement('li'),
-            divLabel = document.createElement('div'),
-            address = locations[i].location.address,
-            content =  '<strong style="font-size: large;">' + address.label  + '</strong><br>';
-        position = {
-            lat: locations[i].location.displayPosition.latitude,
-            lng: locations[i].location.displayPosition.longitude
-        };
-        
-        content += '<strong>houseNumber:</strong> ' + address.houseNumber + '<br/>';
-        content += '<strong>street:</strong> '  + address.street + '<br/>';
-        content += '<strong>district:</strong> '  + address.district + '<br/>';
-        content += '<strong>city:</strong> ' + address.city + '<br/>';
-        content += '<strong>postalCode:</strong> ' + address.postalCode + '<br/>';
-        content += '<strong>county:</strong> ' + address.county + '<br/>';
-        content += '<strong>country:</strong> ' + address.country + '<br/>';
-        content += '<br/><strong>position:</strong> ' +
-            Math.abs(position.lat.toFixed(4)) + ((position.lat > 0) ? 'N' : 'S') +
-            ' ' + Math.abs(position.lng.toFixed(4)) + ((position.lng > 0) ? 'E' : 'W');
-        
-        divLabel.innerHTML = content;
-        li.appendChild(divLabel);
-        
-        nodeOL.appendChild(li);
-    }
-
-    locationsContainer.appendChild(nodeOL);
-}
-
-/**
- * Creates a series of H.map.Markers for each location found, and adds it to the map.
- *
- * @param {Object[]} locations An array of locations as received from the
- *                             H.service.GeocodingService
- */
-function addLocationsToMap(locations) {
-    var group = new  H.map.Group(),
-        position,
-        i;
-    
-    // Add a marker for each location found
-    for (i = 0;  i < locations.length; i += 1) {
-        position = {
-            lat: locations[i].location.displayPosition.latitude,
-            lng: locations[i].location.displayPosition.longitude
-        };
-        marker = new H.map.Marker(position);
-        marker.label = locations[i].location.address.label;
-        group.addObject(marker);
-    }
-    
-    group.addEventListener('tap', function (evt) {
-            map.setCenter(evt.target.getPosition());
-            openBubble(
-                       evt.target.getPosition(), evt.target.label);
-        }, false);
-    
-    // Add the locations group to the map
-    map.addObject(group);
-    map.setViewBounds(group.getBounds());
+function onGeocodeError(error) {
+    console.log(error);
 }
 
 /**
@@ -160,7 +31,7 @@ function addZipToMap(zipcode, group) {
     var zipData = zipcodes[zipcode];
     if (zipData === undefined) {
         console.log('Zip code ' + zipcode + ' has no data');
-    } else if (zipData.poly.length === 0) {
+    } else if (zipData.poly === undefined || zipData.poly.length === 0) {
         console.log('Zip code ' + zipcode + ' has no associated polygon');
     } else {
         var zipCoords = new H.geo.Strip(); 
@@ -170,8 +41,9 @@ function addZipToMap(zipcode, group) {
         var zipPoly = new H.map.Polygon(
                                         zipCoords,
                                         zipGroups[group].displayOptions);
+        zipPoly.setData(group); /* remember this */
         zipPolygons[zipcode] = zipPoly;
-        map.addObject(zipPoly);
+        zipGroups[group].mapGroup.addObject(zipPoly);
     }
 }
 
@@ -182,7 +54,8 @@ function addZipToMap(zipcode, group) {
  */
 function removeZipFromMap(zipcode) {
     if (zipPolygons[zipcode] !== undefined) {
-        map.removeObject(zipPolygons[zipcode]);
+        var group = zipPolygons[zipcode].getData();
+        zipGroups[group].mapGroup.removeObject(zipPolygons[zipcode]);
         delete zipPolygons[zipcode];
     }
 }
@@ -219,54 +92,59 @@ function onZipFocus() {
  *
  * @param zipContainer {<div>} container to add zip selection UI into
  */
-function enumerateZipCodes(zipsContainer) {
-    for (var key in zipcodes) {
-        if (zipcodes.hasOwnProperty(key)) {
-            var zipNode = document.createElement('div');
-            zipNode.className = 'zip';
-            var cbox = document.createElement('input');
-            cbox.id = key;
-            cbox.value = key;
-            cbox.type = 'checkbox';
-            // TODO: disable if no polygon
-            cbox.onchange = onZipToggle;
-            zipNode.appendChild(cbox);
-            var label = document.createElement('label');
-            label.for = key;
-            label.title = zipcodes[key].name;
-            // TODO: disable if no location
-            label.onclick = onZipFocus;
-            var space = document.createTextNode(' ');
-            label.appendChild(space);
-            var text = document.createTextNode(key);
-            label.appendChild(text);
-            zipNode.appendChild(label);
-            zipsContainer.appendChild(zipNode);
-        }
-    }
+function enumerateZipCodes(group, zipsContainer) {
+    var groupNode = document.createElement('div');
+    var groupName = document.createElement('h3');
+    var groupText = document.createTextNode(group.name);
+    groupName.appendChild(groupText);
+    groupNode.appendChild(groupName);
+    $.each(group.zipCodes, function(idx, key) {
+            if (zipcodes.hasOwnProperty(Number(key))) {
+                var zipData = zipcodes[Number(key)];
+                var zipNode = document.createElement('div');
+                zipNode.className = 'zip';
+                var cbox = document.createElement('input');
+                cbox.id = key;
+                cbox.value = key;
+                cbox.type = 'checkbox';
+                if (zipData.poly === undefined || zipData.poly.length == 0) {
+                    cbox.disabled = true;
+                } else {
+                    cbox.onchange = onZipToggle;
+                }
+                zipNode.appendChild(cbox);
+                var label = document.createElement('label');
+                label.for = key;
+                label.title = zipcodes[key].name;
+                if (zipData.center === undefined) {
+                    label.disabled = true;
+                } else {
+                    label.onclick = onZipFocus;
+                }
+                var space = document.createTextNode(' ');
+                label.appendChild(space);
+                var text = document.createTextNode(key);
+                label.appendChild(text);
+                zipNode.appendChild(label);
+                groupNode.appendChild(zipNode);
+            }
+        });
+    zipsContainer.appendChild(groupNode);
 }
 
 function populateGroups() {
-    var params = {};
-
-    if (location.search) {
-        var parts = location.search.substring(1).split('&');
-
-        for (var i = 0; i < parts.length; i++) {
-            var nv = parts[i].split('=');
-            if (!nv[0]) continue;
-            params[nv[0]] = nv[1] || true;
-        }
-    }
-    if (params['default'] !== undefined) {
-        params['default'].split(',').forEach(function(z) {
-                addZipToMap(z, 'default');
-                var cbox = document.getElementById(z);
-                if (cbox !== null) {
-                    cbox.checked = true;
-                }
-            });
-    }
+    $.each(zipGroups, function(groupKey, group) {
+            group.mapGroup = new H.map.Group();
+            $.each(group.zipCodes, function(idx, zipcode) {
+                    addZipToMap(zipcode, groupKey);
+                    var cbox = document.getElementById(zipcode);
+                    if (cbox !== null && cbox.disabled === false) {
+                        cbox.checked = true;
+                    }
+                });
+            map.addObject(group.mapGroup);
+            map.setViewBounds(group.mapGroup.getBounds());
+        });
 }
 
 /**
@@ -282,7 +160,7 @@ var platform = new H.service.Platform({
     });
 var defaultLayers = platform.createDefaultLayers();
 
-//Step 2: initialize a map - this map is centered over California
+//Step 2: initialize a map
 var map = new H.Map(document.getElementById('map'),
                     defaultLayers.normal.map,{
                         center: {lat:47.5581, lng:-122.1466},
@@ -324,32 +202,27 @@ zipGroups['default'] = {
     }
 };
 
-// populate the zip code selection UI
-enumerateZipCodes(locationsContainer);
-
-populateGroups();
-
-function geocode2(platform, where) {
-    var geocoder = platform.getGeocodingService();
-    var geocodingParameters = {
-        jsonattributes : 1
-    };
-
-    for (key in where) {
-        if (where.hasOwnProperty(key)) {
-            geocodingParameters[key] = where[key];
-        }
+// decode query parameters
+var params = {};
+if (location.search) {
+    var parts = location.search.substring(1).split('&');
+    
+    for (var i = 0; i < parts.length; i++) {
+        var nv = parts[i].split('=');
+        if (!nv[0]) continue;
+        params[nv[0]] = nv[1] || true;
     }
-    geocoder.geocode(geocodingParameters,
-                     onGeocodeSuccess,
-                     onGeocodeError
-                     );
+}
+if (params['default'] !== undefined) {
+    zipGroups['default'].zipCodes = params['default'].split(',');
 }
 
-function onGeocodeSuccess(result) {
-    console.log(result);
-}
+// go fetch the required zip codes and render...
+$.get('/api/zipcodes?q=' + params['default'], function(data) {
+        zipcodes = data;
+        // populate the zip code selection UI
+        enumerateZipCodes(zipGroups['default'], locationsContainer);
 
-function onGeocodeError(error) {
-    console.log(error);
-}
+        populateGroups();
+    });
+

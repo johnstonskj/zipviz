@@ -3,7 +3,7 @@ var router = express.Router();
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-        res.render('index', { title: 'Zip Crusher', heading: 'Zip Centering' });
+        res.render('index', { title: 'Zip Viz', heading: 'Zip Group Viewer' });
 });
 
 module.exports = router;
