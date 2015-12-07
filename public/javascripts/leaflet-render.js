@@ -1,14 +1,26 @@
+
+/**
+ * Return a key that can be used for UI control and the zipPolygons hash
+ *
+ * @param group the index into the group array
+ * @param zipcode the zipcode itself
+ */
+function mkKey(group, zipcode) {
+    return group + '_' + zipcode;
+}
+
 /**
  * UI event handler to turn zipcode polygon on/off
  *
  * context: <input type="checkbox">
  */
 function onZipToggle() {
+    var group = Number(this.attributes['data-group'].value);
+    var zipcode = Number(this.attributes['data-code'].value);
     if (this.checked) {
-        var group = Number(this.attributes['data-group'].value);
-        addZipToMap(this.value, group);
+        addZipToMap(zipcode, group);
     } else {
-        removeZipFromMap(this.value);
+        removeZipFromMap(zipcode, group);
     }
 }
 
@@ -38,16 +50,18 @@ function enumerateZipCodes(zipsContainer) {
             var groupText = document.createTextNode(group.name);
             groupName.appendChild(groupText);
             groupNode.appendChild(groupName);
-            $.each(group.zipCodes, function(idx, key) {
-                    if (zipcodes.hasOwnProperty(Number(key))) {
-                        var zipData = zipcodes[Number(key)];
+            $.each(group.zipCodes, function(idx, zipcode) {
+                    if (zipcodes.hasOwnProperty(Number(zipcode))) {
+                        var zipData = zipcodes[Number(zipcode)];
                         var zipNode = document.createElement('div');
                         zipNode.className = 'zip';
                         var cbox = document.createElement('input');
+                        var key = mkKey(groupId, zipcode);
                         cbox.id = key;
                         cbox.value = key;
                         cbox.type = 'checkbox';
                         cbox.setAttribute('data-group', groupId);
+                        cbox.setAttribute('data-code', zipcode);
                         if (zipData.poly === undefined || zipData.poly.length == 0) {
                             cbox.disabled = true;
                         } else {
@@ -56,14 +70,14 @@ function enumerateZipCodes(zipsContainer) {
                         zipNode.appendChild(cbox);
                         var label = document.createElement('label');
                         label.for = key;
-                        label.title = zipcodes[key].name;
+                        label.title = zipcodes[zipcode].name;
                         if (zipData.center !== undefined) {
                             label.className = 'center';
                             label.onclick = onZipFocus;
                         }
                         var space = document.createTextNode(' ');
                         label.appendChild(space);
-                        var text = document.createTextNode(key);
+                        var text = document.createTextNode(zipcode);
                         label.appendChild(text);
                         zipNode.appendChild(label);
                         groupNode.appendChild(zipNode);
@@ -80,6 +94,7 @@ function enumerateZipCodes(zipsContainer) {
  * @param group {Object} a group to add to.
  */
 function addZipToMap(zipcode, group) {
+    console.log('Adding ' + zipcode + ' from group ' + group);
     var zipData = zipcodes[zipcode];
     if (zipData === undefined) {
         console.log('Zip code ' + zipcode + ' has no data');
@@ -89,7 +104,7 @@ function addZipToMap(zipcode, group) {
         var zipPoly = L.polyline(zipData.poly);
         var color = zipGroups[group].color;
         zipPoly.setStyle({color: color, weight: 1, fill: true, fillColor: color, fillOpacity: 0.2});
-        zipPolygons[zipcode] = zipPoly;
+        zipPolygons[mkKey(group, zipcode)] = zipPoly;
         zipPoly.addTo(zipGroups[group].mapGroup);
         zipPoly.__group = group;
     }
@@ -100,11 +115,12 @@ function addZipToMap(zipcode, group) {
  *
  * @param zipcode {string} the zip code identifier
  */
-function removeZipFromMap(zipcode) {
-    if (zipPolygons[zipcode] !== undefined) {
-        var group = zipPolygons[zipcode].__group;
-        zipGroups[group].mapGroup.removeLayer(zipPolygons[zipcode]);
-        delete zipPolygons[zipcode];
+function removeZipFromMap(zipcode, group) {
+    var key = mkKey(group, zipcode);
+    if (zipPolygons[key] !== undefined) {
+        var group = zipPolygons[key].__group;
+        zipGroups[group].mapGroup.removeLayer(zipPolygons[key]);
+        delete zipPolygons[key];
     }
 }
 
@@ -118,7 +134,7 @@ function populateGroups() {
             group.mapGroup = L.featureGroup();
             $.each(group.zipCodes, function(idx, zipcode) {
                     addZipToMap(zipcode, groupKey);
-                    var cbox = document.getElementById(zipcode);
+                    var cbox = document.getElementById(mkKey(groupKey, zipcode));
                     if (cbox !== null && cbox.disabled === false) {
                         cbox.checked = true;
                     }
@@ -192,12 +208,16 @@ $.each(zipColors, function(grp) {
         }
     });
 
-
-// go fetch the required zip codes and render...
-$.get('/api/zipcodes?q=' + fetchCodes.join(','), function(data) {
-        zipcodes = data;
-        // populate the zip code selection UI
-        enumerateZipCodes(locationsContainer);
-
-        populateGroups();
+/*
+ * Go do it ...
+ */
+$(document).ready(function() {
+        // go fetch the required zip codes and render...
+        $.get('/api/zipcodes?q=' + fetchCodes.join(','), function(data) {
+                zipcodes = data;
+                // populate the zip code selection UI
+                enumerateZipCodes(locationsContainer);
+                
+                populateGroups();
+            });
     });

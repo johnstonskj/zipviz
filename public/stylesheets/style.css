@@ -22,3 +22,15 @@
 .zip label.center:hover {
   color: blue;
 }
+
+.zip-group {
+  padding: 0.5em;
+  border-style: solid;
+  border-color: #ddd;
+  border-width: 1px;
+  border-radius: 4px 4px 4px 4px;
+}
+
+.zip-group p {
+  word-wrap: break-word;
+}

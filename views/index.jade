@@ -2,14 +2,24 @@ extends layout
 
 block content
   .row
+    .col-md-1
+    .col-md-4
+      h2 Create Map Group
+      form#formAdd(role='form', action='#')
+        .form-group#groupNameGroup
+          label(for='groupName') Group Name
+          input.form-control#groupName(type='text', name='groupName')
+        .form-group#groupCodesGroup
+          label(for='groupCodes') Zip Codes
+          textarea.form-control#groupCodes(name='groupCodes', rows='5')
+        button#btnAdd(class='btn btn-primary') Add
     .col-md-2
-    .col-md-8
-      form(method='get', role='form', action='lrender')
-        .form-group
-          label(for='group1Name') Group Name
-          input.form-control#group1Name(type='text', name='group1Name')
-        .form-group.zipCodeGroup
-          label(for='group1Codes') Zip Codes
-          textarea.form-control#group1Codes(name='group1Codes', rows='5')
-        button(type='submit', class='btn btn-primary') Render
-    .col-md-2
+    .col-md-4
+      h2 Map groups
+      form#formRender(method='get', role='form', action='lrender')
+        p#noGroupMessage Create at least group on the left to render a map
+        button#btnRender(type='submit', class='btn btn-primary', disabled='disabled') Render
+    .col-md-1
+
+block script
+  script(src='/javascripts/index.js')
