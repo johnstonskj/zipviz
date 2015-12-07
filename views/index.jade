@@ -2,9 +2,14 @@ extends layout
 
 block content
   .row
-    #map.map
-    #panel.panel
-
-block script
-  script(src='/javascripts/here.js')
-  script(src='/javascripts/zip-center.js')
+    .col-md-2
+    .col-md-8
+      form(method='get', role='form', action='render')
+        .form-group
+          label(for='group1Name') Group Name
+          input.form-control#group1Name(type='text', name='group1Name')
+        .form-group.zipCodeGroup
+          label(for='group1Codes') Zip Codes
+          textarea.form-control#group1Codes(name='group1Codes', rows='5')
+        button(type='submit', class='btn btn-primary') Render
+    .col-md-2

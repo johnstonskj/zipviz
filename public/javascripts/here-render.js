@@ -204,21 +204,28 @@ zipGroups['default'] = {
 
 // decode query parameters
 var params = {};
+var fetchCodes = '';
 if (location.search) {
     var parts = location.search.substring(1).split('&');
     
     for (var i = 0; i < parts.length; i++) {
         var nv = parts[i].split('=');
         if (!nv[0]) continue;
-        params[nv[0]] = nv[1] || true;
+        params[nv[0]] = nv[1].replace(/%2C/g,',') || true;
     }
 }
-if (params['default'] !== undefined) {
-    zipGroups['default'].zipCodes = params['default'].split(',');
+if (params['group1Name'] !== undefined) {
+    zipGroups['default'].name = params['group1Name'].replace(/\+/g, ' ');
+    console.log(zipGroups['default']);
+}
+if (params['group1Codes'] !== undefined) {
+    fetchCodes = params['group1Codes'];
+    zipGroups['default'].zipCodes = params['group1Codes'].split(',');
+    console.log(zipGroups['default']);
 }
 
 // go fetch the required zip codes and render...
-$.get('/api/zipcodes?q=' + params['default'], function(data) {
+$.get('/api/zipcodes?q=' + fetchCodes, function(data) {
         zipcodes = data;
         // populate the zip code selection UI
         enumerateZipCodes(zipGroups['default'], locationsContainer);
