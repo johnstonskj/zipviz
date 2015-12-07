@@ -19,6 +19,6 @@
   display: inline-block;
 }
 
-.zip label:hover {
+.zip label.center:hover {
   color: blue;
 }

@@ -5,7 +5,8 @@
  */
 function onZipToggle() {
     if (this.checked) {
-        addZipToMap(this.value, 'default');
+        var group = Number(this.attributes['data-group'].value);
+        addZipToMap(this.value, group);
     } else {
         removeZipFromMap(this.value);
     }
@@ -30,44 +31,46 @@ function onZipFocus() {
  *
  * @param zipContainer {<div>} container to add zip selection UI into
  */
-function enumerateZipCodes(group, zipsContainer) {
-    var groupNode = document.createElement('div');
-    var groupName = document.createElement('h3');
-    var groupText = document.createTextNode(group.name);
-    groupName.appendChild(groupText);
-    groupNode.appendChild(groupName);
-    $.each(group.zipCodes, function(idx, key) {
-            if (zipcodes.hasOwnProperty(Number(key))) {
-                var zipData = zipcodes[Number(key)];
-                var zipNode = document.createElement('div');
-                zipNode.className = 'zip';
-                var cbox = document.createElement('input');
-                cbox.id = key;
-                cbox.value = key;
-                cbox.type = 'checkbox';
-                if (zipData.poly === undefined || zipData.poly.length == 0) {
-                    cbox.disabled = true;
-                } else {
-                    cbox.onchange = onZipToggle;
-                }
-                zipNode.appendChild(cbox);
-                var label = document.createElement('label');
-                label.for = key;
-                label.title = zipcodes[key].name;
-                if (zipData.center === undefined) {
-                    label.disabled = true;
-                } else {
-                    label.onclick = onZipFocus;
-                }
-                var space = document.createTextNode(' ');
-                label.appendChild(space);
-                var text = document.createTextNode(key);
-                label.appendChild(text);
-                zipNode.appendChild(label);
-                groupNode.appendChild(zipNode);
-            }
+function enumerateZipCodes(zipsContainer) {
+    $.each(zipGroups, function(groupId, group) {
+            var groupNode = document.createElement('div');
+            var groupName = document.createElement('h3');
+            var groupText = document.createTextNode(group.name);
+            groupName.appendChild(groupText);
+            groupNode.appendChild(groupName);
+            $.each(group.zipCodes, function(idx, key) {
+                    if (zipcodes.hasOwnProperty(Number(key))) {
+                        var zipData = zipcodes[Number(key)];
+                        var zipNode = document.createElement('div');
+                        zipNode.className = 'zip';
+                        var cbox = document.createElement('input');
+                        cbox.id = key;
+                        cbox.value = key;
+                        cbox.type = 'checkbox';
+                        cbox.setAttribute('data-group', groupId);
+                        if (zipData.poly === undefined || zipData.poly.length == 0) {
+                            cbox.disabled = true;
+                        } else {
+                            cbox.onchange = onZipToggle;
+                        }
+                        zipNode.appendChild(cbox);
+                        var label = document.createElement('label');
+                        label.for = key;
+                        label.title = zipcodes[key].name;
+                        if (zipData.center !== undefined) {
+                            label.className = 'center';
+                            label.onclick = onZipFocus;
+                        }
+                        var space = document.createTextNode(' ');
+                        label.appendChild(space);
+                        var text = document.createTextNode(key);
+                        label.appendChild(text);
+                        zipNode.appendChild(label);
+                        groupNode.appendChild(zipNode);
+                    }
+                });
+            zipsContainer.appendChild(groupNode);
         });
-    zipsContainer.appendChild(groupNode);
 }
 
 /**
@@ -84,7 +87,8 @@ function addZipToMap(zipcode, group) {
         console.log('Zip code ' + zipcode + ' has no associated polygon');
     } else {
         var zipPoly = L.polyline(zipData.poly);
-        zipPoly.setStyle({color: 'red', weight: 1, fill: true, fillColor: 'red', fillOpacity: 0.2});
+        var color = zipGroups[group].color;
+        zipPoly.setStyle({color: color, weight: 1, fill: true, fillColor: color, fillOpacity: 0.2});
         zipPolygons[zipcode] = zipPoly;
         zipPoly.addTo(zipGroups[group].mapGroup);
         zipPoly.__group = group;
@@ -158,40 +162,42 @@ var bubble;
 var zipGroups = {};
 var zipPolygons = {};
 
+// configured colors
+var zipColors = ['red', 'blue', 'green', 'yellow'];
+
 // create default zip code display group
-zipGroups['default'] = {
-    name: 'Default Group',
-    displayOptions: {
-        pen: {strokeColor: "#000", lineWidth: 1},
-        brush: {color: "#2C2A"}
-    }
-};
+var zipGroups = [];
 
 // decode query parameters
 var params = {};
-var fetchCodes = '';
+var fetchCodes = [];
 if (location.search) {
     var parts = location.search.substring(1).split('&');
     
     for (var i = 0; i < parts.length; i++) {
         var nv = parts[i].split('=');
         if (!nv[0]) continue;
-        params[nv[0]] = nv[1].replace(/%2C/g,',') || true;
+        params[nv[0]] = nv[1] || true;
     }
 }
-if (params['group1Name'] !== undefined) {
-    zipGroups['default'].name = params['group1Name'].replace(/\+/g, ' ');
-}
-if (params['group1Codes'] !== undefined) {
-    fetchCodes = params['group1Codes'];
-    zipGroups['default'].zipCodes = params['group1Codes'].split(',');
-}
+$.each(zipColors, function(grp) {
+        var group = 'group' + String(grp+1);
+        if (params[group + 'Name'] !== undefined && params[group + 'Codes'] !== undefined) {
+            zipGroups[grp] = {name: '', color: zipColors[grp], zipCodes: []};
+            zipGroups[grp].name = params[group + 'Name'].replace(/\+/g, ' ');
+            zipGroups[grp].color = zipColors[grp];
+            var codes = params[group + 'Codes'].replace(/%2C/g,',').split(',');
+            zipGroups[grp].zipCodes = codes;
+            Array.prototype.push.apply(fetchCodes, codes);
+        }
+    });
+
 
 // go fetch the required zip codes and render...
-$.get('/api/zipcodes?q=' + fetchCodes, function(data) {
+$.get('/api/zipcodes?q=' + fetchCodes.join(','), function(data) {
         zipcodes = data;
         // populate the zip code selection UI
-        enumerateZipCodes(zipGroups['default'], locationsContainer);
+        enumerateZipCodes(locationsContainer);
 
         populateGroups();
     });
