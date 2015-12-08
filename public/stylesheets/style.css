@@ -1,14 +1,13 @@
-.map {
-  position:absolute; 
-  width:47%; 
-  height:80%; 
+.topContainer {
+  position: relative;
+}
+
+.mapContainer {
+  height:720px; 
   background:grey;
 }
 
-.panel {
-  position:absolute; 
-  width:47%; 
-  left:51%; 
+.zipContainer {
   height:80%; 
   background:inherit; 
   overflow-x: auto;

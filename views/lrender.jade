@@ -5,9 +5,11 @@ block css
   script(src='http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js')
 
 block content
-  .row
-    #map.map
-    #panel.panel
+  div(class='row topContainer')
+    .col-md-6
+      #map.mapContainer
+    .col-md-6
+      #panel.zipContainer
 
 block script
   script(src='/javascripts/leaflet-render.js')
