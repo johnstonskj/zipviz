@@ -10,6 +10,16 @@ function mkKey(group, zipcode) {
 }
 
 /**
+ * Split a UI control key into a group and zipcode pair
+ */
+function fromKey(key) {
+    return [
+            key.substring(0, key.indexOf('_')),
+            key.substring(key.indexOf('_')+1)
+            ];
+}
+
+/**
  * UI event handler to turn zipcode polygon on/off
  *
  * context: <input type="checkbox">
@@ -31,7 +41,8 @@ function onZipToggle() {
  */
 function onZipFocus() {
     if (this['for'] !== undefined) {
-        var zipData = zipcodes[this.for];
+        var zipcode = fromKey(this.for)[1];
+        var zipData = zipcodes[zipcode];
         if (zipData.center !== undefined) {
             map.setView(zipData.center);
         }
@@ -94,7 +105,6 @@ function enumerateZipCodes(zipsContainer) {
  * @param group {Object} a group to add to.
  */
 function addZipToMap(zipcode, group) {
-    console.log('Adding ' + zipcode + ' from group ' + group);
     var zipData = zipcodes[zipcode];
     if (zipData === undefined) {
         console.log('Zip code ' + zipcode + ' has no data');
