@@ -8,16 +8,18 @@ block content
       form#formAdd(role='form', action='#')
         .form-group#groupNameGroup
           label(for='groupName') Group Name
-          input.form-control#groupName(type='text', name='groupName')
+          input.form-control#groupName(type='text', name='groupName', aria-describedby='groupNameHelp')
+          #groupNameHelp.help-block Enter a unique group name
         .form-group#groupCodesGroup
           label(for='groupCodes') Zip Codes
-          textarea.form-control#groupCodes(name='groupCodes', rows='5')
+          textarea.form-control#groupCodes(name='groupCodes', rows='5', aria-describedby='groupCodesHelp')
+          #groupCodesHelp.help-block Enter a list of zip codes, separated by commas
         button#btnAdd(class='btn btn-primary') Add
     .col-md-2
     .col-md-4
       h2 Map groups
       form#formRender(method='get', role='form', action='lrender')
-        p#noGroupMessage Create at least group on the left to render a map
+        p#noGroupMessage Create at least one group on the left to render a map
         button#btnRender(type='submit', class='btn btn-primary', disabled='disabled') Render
     .col-md-1
 

@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-const TITLE = 'Zip Vizualizer';
+const TITLE = 'Zip Visualizer';
 
 /* GET home page. */
 router.get('/', function(req, res, next) {

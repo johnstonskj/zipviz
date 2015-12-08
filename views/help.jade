@@ -1,0 +1,26 @@
+extends layout
+
+block content
+  .row
+    .col-md-1
+    .col-md-8
+      h2 #{title} Help
+      p. 
+        #{title} allows for the visualization of groups of zip codes on a map in real-time.
+        This real-time nature allows for groups to be toggled on/off as well as individual
+        zip codes within a group. The tool consists of a simple form that creates one or more
+        groups (consisting a name and comma-separated list of zip codes) and then renders
+        these on a map that can be explored.
+      p.
+        To render a map, go to the <a href="/">entry form</a>
+        and add a group with the name 'My Test Group' and one or more zip codes ('98052,98053'
+        for example) and press the Add button. Once there is at least one group added on the 
+        right-hand side you can press the Render button to take you to the rendered map.
+      p.
+        The resulting map can be zoomed and moved, and consists of a layer selector (top right
+        corner) that can toggle whole groups on/off as well as a group tool on the right-hand 
+        side to toggle on/off individual zip codes. Note that clicking on the zip code itself
+        on the right-hand side will move that zip code to the center of the map (if data is 
+        available to do so).
+    .col-md-1
+
